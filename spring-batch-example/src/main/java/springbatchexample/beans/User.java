@@ -3,9 +3,9 @@ package springbatchexample.beans;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-@Entity
+//@Entity
 public class User {
-	@Id
+	//@Id
 	private Integer Id;
 	private String name;
 	private String dept;
