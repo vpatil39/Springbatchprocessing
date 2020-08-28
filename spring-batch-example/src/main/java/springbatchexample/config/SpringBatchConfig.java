@@ -13,27 +13,41 @@ import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 import springbatchexample.beans.User;
+import springbatchexample.beans.UserSpecify;
+import springbatchexample.itemWriter.DbWriter;
+import springbatchexample.processor.Processor;
 
 @Configuration
 
 public class SpringBatchConfig {
 
+	@Autowired
+	DbWriter dbWriter;
+
+	@Autowired
+	Processor processor;
+
 	@Bean
 	public Job job(JobBuilderFactory jobBuilderFactory, StepBuilderFactory stepBuilderFactory,
-			ItemReader<User> itemReader, ItemProcessor<User, User> itemProcesser, ItemWriter<User> itemWriter) {
+			ItemReader<User> itemReader, ItemProcessor<User, UserSpecify> itemProcesser, ItemWriter<UserSpecify> itemWriter) {
 
-		Step step = stepBuilderFactory.get("ETL-file-load").<User, User>chunk(100).reader(itemReader)
-				.processor(itemProcesser).writer(itemWriter).build();
-
-		return jobBuilderFactory.get("ETL-Load").incrementer(new RunIdIncrementer()).start(step).build();
+		
+		return jobBuilderFactory.get("ETL-Load").incrementer(new RunIdIncrementer()).start(step(stepBuilderFactory))
+				.build();
 
 	}
-//	@Value("${inputfile}") Resource resource
+
+	@Bean
+	Step step(StepBuilderFactory stepBuilderFactory) {
+		return stepBuilderFactory.get("ETL-file-load").<User, UserSpecify>chunk(100).reader(fileItemReader())
+				.processor(processor).writer(dbWriter).build();
+	}
 
 	@Bean
 
@@ -52,7 +66,7 @@ public class SpringBatchConfig {
 		DelimitedLineTokenizer lineTokenizer = new DelimitedLineTokenizer();
 		lineTokenizer.setDelimiter(",");
 		lineTokenizer.setStrict(false);
-		java.lang.String[] names = { "id","name","dept","salary"};
+		java.lang.String[] names = { "id", "name", "dept", "salary" };
 		lineTokenizer.setNames(names);
 		BeanWrapperFieldSetMapper<User> fieldSetMapper = new BeanWrapperFieldSetMapper<User>();
 		fieldSetMapper.setTargetType(User.class);
